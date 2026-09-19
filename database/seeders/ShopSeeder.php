@@ -37,17 +37,41 @@ class ShopSeeder extends Seeder
                 'status' => 'active',
             ],
 
-            // TikTok Shops
+            // TikTok Shops (Official Storefronts)
             [
                 'platform_id' => $tiktok->id,
-                'name' => 'TikTok Shop A (Live Stream Official)',
-                'code' => 'tiktok_a',
+                'name' => 'KGOLD BEAUTY',
+                'code' => 'kgold_beauty',
                 'status' => 'active',
             ],
             [
                 'platform_id' => $tiktok->id,
-                'name' => 'TikTok Shop B (Creator Affiliate)',
-                'code' => 'tiktok_b',
+                'name' => 'PUREHERB',
+                'code' => 'pureherb',
+                'status' => 'active',
+            ],
+            [
+                'platform_id' => $tiktok->id,
+                'name' => 'NATURES BEAUTY (Old)',
+                'code' => 'natures_beauty_old',
+                'status' => 'active',
+            ],
+            [
+                'platform_id' => $tiktok->id,
+                'name' => 'NATURES BEAUTY (New)',
+                'code' => 'natures_beauty_new',
+                'status' => 'active',
+            ],
+            [
+                'platform_id' => $tiktok->id,
+                'name' => 'MIDAXX GEN SHOP',
+                'code' => 'midaxx_gen_shop',
+                'status' => 'active',
+            ],
+            [
+                'platform_id' => $tiktok->id,
+                'name' => 'MENS CORNER PH',
+                'code' => 'mens_corner_ph',
                 'status' => 'active',
             ],
         ];

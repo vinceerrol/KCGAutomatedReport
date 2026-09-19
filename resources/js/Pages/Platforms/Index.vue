@@ -142,8 +142,19 @@ defineProps<{
                     </div>
                 </div>
 
+                <!-- Dedicated TikTok Hourly Breakdown Feature Action -->
+                <div v-if="p.code === 'tiktok'" class="mt-4 pt-3 border-t border-slate-100">
+                    <Link
+                        href="/tiktok"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl text-xs font-bold shadow-xs shadow-rose-500/20 transition active:scale-[0.98]"
+                    >
+                        <Zap class="w-3.5 h-3.5 fill-current" />
+                        <span>Open TikTok Hourly GMV Breakdown</span>
+                    </Link>
+                </div>
+
                 <!-- Integration Status Callout -->
-                <div class="mt-5 p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60 text-xs">
+                <div class="mt-4 p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60 text-xs">
                     <div class="flex items-center justify-between text-slate-800 font-semibold mb-1">
                         <span class="flex items-center gap-1.5">
                             <Activity class="w-3.5 h-3.5 text-indigo-600" :stroke-width="2" />
