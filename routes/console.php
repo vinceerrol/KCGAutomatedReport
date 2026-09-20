@@ -9,7 +9,9 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 /**
- * Hourly report generation schedule.
- * Automatically consolidates demo/external platform sales metrics every hour.
+ * Hourly report generation schedules.
+ * Independent background pipelines for Shopee and TikTok Shop.
  */
+Schedule::command('reports:shopee')->hourly()->withoutOverlapping();
+Schedule::command('reports:tiktok')->hourly()->withoutOverlapping();
 Schedule::command('reports:generate')->hourly()->withoutOverlapping();

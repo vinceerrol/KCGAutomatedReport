@@ -1,55 +1,62 @@
 <?php
 
-use App\Http\Controllers\AutomationController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PlatformController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ShopController;
-use App\Http\Controllers\TikTokReportController;
+use App\Http\Controllers\Api\AutomationController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\ShopeeReportController;
+use App\Http\Controllers\Api\TikTokReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes - Hourly Reporting Automation System
+| Web Routes - Decoupled Frontend Bridge & Direct Export Endpoints
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+$frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
 
+// Redirect web pages directly to standalone React 19 Frontend
+Route::get('/', fn () => redirect($frontendUrl))->name('dashboard');
+Route::get('/shopee', fn () => redirect("{$frontendUrl}/shopee"))->name('shopee.index');
+Route::get('/tiktok', fn () => redirect("{$frontendUrl}/tiktok"))->name('tiktok.index');
+Route::get('/reports', fn () => redirect("{$frontendUrl}/reports"))->name('reports.index');
+Route::get('/reports/{id}', fn ($id) => redirect("{$frontendUrl}/reports"))->name('reports.show');
+Route::get('/shops', fn () => redirect("{$frontendUrl}/shops"))->name('shops.index');
+Route::get('/platforms', fn () => redirect("{$frontendUrl}/platforms"))->name('platforms.index');
+Route::get('/platforms/shopee', fn () => redirect("{$frontendUrl}/shopee"))->name('platforms.shopee');
+Route::get('/platforms/tiktok', fn () => redirect("{$frontendUrl}/tiktok"))->name('platforms.tiktok');
+Route::get('/automation', fn () => redirect("{$frontendUrl}/automation"))->name('automation.index');
+
+// Reports Direct Export Endpoints
 Route::prefix('reports')->name('reports.')->group(function () {
-    Route::get('/', [ReportController::class, 'index'])->name('index');
     Route::post('/generate', [ReportController::class, 'generate'])->name('generate');
-    
-    // Batch Excel & CSV export endpoints
     Route::get('/export/summary.xlsx', [ReportController::class, 'exportBatchSummaryExcel'])->name('export.summary.xlsx');
     Route::get('/export/detailed_stores.xlsx', [ReportController::class, 'exportBatchDetailedExcel'])->name('export.detailed.xlsx');
-    Route::get('/export/summary.csv', [ReportController::class, 'exportBatch'])->name('export.summary.csv');
-    Route::get('/export/detailed_stores.csv', [ReportController::class, 'exportBatch'])->name('export.detailed.csv');
-    Route::get('/export', [ReportController::class, 'exportBatch'])->name('export.batch');
-    Route::get('/export.csv', [ReportController::class, 'exportBatch'])->name('export.batch.csv');
+    Route::get('/export/summary.csv', [ReportController::class, 'exportBatchSummaryCsv'])->name('export.summary.csv');
+    Route::get('/export/detailed_stores.csv', [ReportController::class, 'exportBatchDetailedCsv'])->name('export.detailed.csv');
+    Route::get('/export', [ReportController::class, 'exportBatchSummaryExcel'])->name('export.batch');
 
-    // Single report Excel & CSV export endpoints
-    Route::get('/{id}', [ReportController::class, 'show'])->name('show');
     Route::get('/{id}/export.xlsx', [ReportController::class, 'exportSingleExcel'])->name('export.single.xlsx');
     Route::get('/{id}/hourly_report_{report_id}.xlsx', [ReportController::class, 'exportSingleExcel'])->name('export.single.xlsx_named');
-    Route::get('/{id}/export', [ReportController::class, 'exportSingle'])->name('export.single');
-    Route::get('/{id}/export.csv', [ReportController::class, 'exportSingle'])->name('export.single.csv');
-    Route::get('/{id}/hourly_report_{report_id}.csv', [ReportController::class, 'exportSingle'])->name('export.single.named');
+    Route::get('/{id}/export', [ReportController::class, 'exportSingleExcel'])->name('export.single');
+    Route::get('/{id}/export.csv', [ReportController::class, 'exportSingleCsv'])->name('export.single.csv');
+    Route::get('/{id}/hourly_report_{report_id}.csv', [ReportController::class, 'exportSingleCsv'])->name('export.single.named');
 });
 
-// TikTok Hourly GMV Breakdown Automation Feature
+// Shopee Direct Export & Midnight Simulation Endpoints
+Route::prefix('shopee')->name('shopee.')->group(function () {
+    Route::get('/export/excel', [ShopeeReportController::class, 'exportExcel'])->name('export.excel');
+    Route::get('/export/csv', [ShopeeReportController::class, 'exportCsv'])->name('export.csv');
+    Route::post('/simulate-midnight', [ShopeeReportController::class, 'simulateMidnight'])->name('simulate.midnight');
+});
+
+// TikTok Direct Export & Midnight Simulation Endpoints
 Route::prefix('tiktok')->name('tiktok.')->group(function () {
-    Route::get('/', [TikTokReportController::class, 'index'])->name('index');
     Route::get('/export/excel', [TikTokReportController::class, 'exportExcel'])->name('export.excel');
     Route::get('/export/csv', [TikTokReportController::class, 'exportCsv'])->name('export.csv');
     Route::post('/simulate-midnight', [TikTokReportController::class, 'simulateMidnight'])->name('simulate.midnight');
 });
 
-Route::get('/shops', [ShopController::class, 'index'])->name('shops.index');
-Route::get('/platforms', [PlatformController::class, 'index'])->name('platforms.index');
-Route::get('/platforms/tiktok', [TikTokReportController::class, 'index'])->name('platforms.tiktok');
-
+// Automation Direct Triggers
 Route::prefix('automation')->name('automation.')->group(function () {
-    Route::get('/', [AutomationController::class, 'index'])->name('index');
     Route::post('/run', [AutomationController::class, 'run'])->name('run');
 });

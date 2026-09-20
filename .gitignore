@@ -24,4 +24,6 @@ Homestead.yaml
 Thumbs.db
 __pycache__/
 *.pyc
+/autoreportFront/node_modules
+/autoreportFront/dist
 
