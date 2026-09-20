@@ -80,11 +80,13 @@ class DashboardController extends Controller
                 'next_report_at' => $nextScheduled->format('M d, Y h:i A') . ' PHT',
             ],
             'meta' => [
-                'current_date'   => Carbon::now()->format('F d, Y'),
-                'current_time'   => Carbon::now()->format('h:i A') . ' PHT',
-                'selected_date'  => $selectedDate,
-                'today_date'     => $today,
-                'yesterday_date' => Carbon::yesterday()->format('Y-m-d'),
+                'current_date'    => Carbon::now()->format('F d, Y'),
+                'current_time'    => Carbon::now()->format('h:i A') . ' PHT',
+                'selected_date'   => $selectedDate,
+                'today_date'      => $today,
+                'today_label'     => Carbon::today()->format('M d'),
+                'yesterday_date'  => Carbon::yesterday()->format('Y-m-d'),
+                'yesterday_label' => Carbon::yesterday()->format('M d'),
             ],
         ]);
     }
