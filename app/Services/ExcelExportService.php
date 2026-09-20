@@ -556,6 +556,216 @@ class ExcelExportService
         return $this->outputWorkbook($spreadsheet);
     }
 
+    /**
+     * Generate styled Microsoft Excel (.xlsx) workbook for Shopee Hourly Breakdown.
+     */
+    public function generateShopeeHourlyExcel(array $data): string
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle("Shopee Hourly Breakdown");
+        $sheet->setShowGridLines(true);
+
+        $dateFormatted = $data['meta']['formatted_date'] ?? 'September 19, 2026';
+        $hours = $data['hours'] ?? [];
+        $shops = $data['shops'] ?? [];
+        $summary = $data['summary'] ?? [];
+
+        // Map columns: A = Shop, B = Metric, C..R = 16 hours
+        $hourKeys = array_keys($hours);
+        $colLetters = [];
+        $colIndex = 3;
+        foreach ($hourKeys as $hk) {
+            $colLetters[$hk] = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex++);
+        }
+        $lastCol = end($colLetters) ?: 'R';
+
+        // 1. Row 1: Title Banner
+        $sheet->setCellValue('A1', 'DATE:');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF000000'));
+        $sheet->getStyle('A1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFF0EB');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+        $sheet->setCellValue('B1', $dateFormatted);
+        $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF000000'));
+        $sheet->getStyle('B1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFBEB');
+        $sheet->getStyle('B1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+        $sheet->setCellValue('C1', 'SHOPEE — HOURLY BREAKDOWN (GMV per shop by hour)');
+        $sheet->mergeCells("C1:{$lastCol}1");
+        $sheet->getStyle("C1:{$lastCol}1")->getFont()->setBold(true)->setSize(11)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+        $sheet->getStyle("C1:{$lastCol}1")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D'); // Shopee Brand Orange
+        $sheet->getStyle("C1:{$lastCol}1")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getRowDimension(1)->setRowHeight(26);
+
+        // 2. Row 2: Headers (SHOP, METRIC, 9:00 AM, 10:00 AM, ...)
+        $sheet->setCellValue('A2', 'SHOP');
+        $sheet->setCellValue('B2', 'METRIC');
+        $sheet->getStyle('A2:B2')->getFont()->setBold(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+        $sheet->getStyle('A2:B2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D');
+        $sheet->getStyle('A2:B2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+        foreach ($hours as $hk => $hl) {
+            $col = $colLetters[$hk];
+            $sheet->setCellValue("{$col}2", $hl);
+            $sheet->getStyle("{$col}2")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+            $sheet->getStyle("{$col}2")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D');
+            $sheet->getStyle("{$col}2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        }
+        $sheet->getRowDimension(2)->setRowHeight(24);
+
+        // 3. Shop Data Rows (4 rows per shop)
+        $currentRow = 3;
+        foreach ($shops as $shop) {
+            $startRow = $currentRow;
+            $endRow = $currentRow + 3;
+
+            // Merged Shop Name in Column A
+            $sheet->setCellValue("A{$startRow}", $shop['shop_name']);
+            $sheet->mergeCells("A{$startRow}:A{$endRow}");
+            $sheet->getStyle("A{$startRow}:A{$endRow}")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFEE4D2D'));
+            $sheet->getStyle("A{$startRow}:A{$endRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+            $sheet->getStyle("A{$startRow}:A{$endRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFFFF');
+
+            // 4 Metrics
+            $metricsDef = [
+                ['name' => 'AD SPEND', 'key' => 'ad_spend', 'bg' => 'FFFDE8D7', 'format' => '#,##0'],
+                ['name' => 'ORDERS',   'key' => 'orders',   'bg' => 'FFE2F7EA', 'format' => '#,##0'],
+                ['name' => 'SALES',    'key' => 'sales',    'bg' => 'FFFFF2CC', 'format' => '#,##0'],
+                ['name' => 'ROAS',     'key' => 'roas',     'bg' => 'FFE0F2FE', 'format' => '0.00"x"'],
+            ];
+
+            foreach ($metricsDef as $idx => $mDef) {
+                $r = $currentRow + $idx;
+                $sheet->setCellValue("B{$r}", $mDef['name']);
+                $sheet->getStyle("B{$r}")->getFont()->setBold(true)->setSize(8)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF334155'));
+                $sheet->getStyle("B{$r}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($mDef['bg']);
+                $sheet->getStyle("B{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getRowDimension($r)->setRowHeight(20);
+
+                // Hourly values
+                foreach ($hourKeys as $hk) {
+                    $col = $colLetters[$hk];
+                    $val = $shop['metrics'][$mDef['key']][$hk] ?? null;
+
+                    if ($val !== null) {
+                        $sheet->setCellValue("{$col}{$r}", $val);
+                        $sheet->getStyle("{$col}{$r}")->getNumberFormat()->setFormatCode($mDef['format']);
+                    } else {
+                        $sheet->setCellValue("{$col}{$r}", '');
+                    }
+
+                    $sheet->getStyle("{$col}{$r}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($mDef['bg']);
+                    $sheet->getStyle("{$col}{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                    $sheet->getStyle("{$col}{$r}")->getFont()->setSize(9);
+                }
+            }
+
+            $currentRow += 4;
+        }
+
+        // 4. Subheader Banner for Summary: TOTAL SHOPEE HOURLY
+        $sheet->setCellValue("A{$currentRow}", 'TOTAL SHOPEE HOURLY');
+        $sheet->mergeCells("A{$currentRow}:{$lastCol}{$currentRow}");
+        $sheet->getStyle("A{$currentRow}:{$lastCol}{$currentRow}")->getFont()->setBold(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+        $sheet->getStyle("A{$currentRow}:{$lastCol}{$currentRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D');
+        $sheet->getStyle("A{$currentRow}:{$lastCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getRowDimension($currentRow)->setRowHeight(22);
+        $currentRow++;
+
+        // 5. Total Sales Row
+        $totalSalesRow = $currentRow;
+        $sheet->setCellValue("A{$totalSalesRow}", 'TOTAL SHOPEE');
+        $sheet->setCellValue("B{$totalSalesRow}", 'TOTAL SALES (P)');
+        $sheet->getStyle("A{$totalSalesRow}:B{$totalSalesRow}")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+        $sheet->getStyle("A{$totalSalesRow}:B{$totalSalesRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D');
+        $sheet->getStyle("A{$totalSalesRow}:B{$totalSalesRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getRowDimension($totalSalesRow)->setRowHeight(22);
+
+        foreach ($hourKeys as $hk) {
+            $col = $colLetters[$hk];
+            $val = $summary['total_sales'][$hk] ?? null;
+            if ($val !== null) {
+                $sheet->setCellValue("{$col}{$totalSalesRow}", $val);
+                $sheet->getStyle("{$col}{$totalSalesRow}")->getNumberFormat()->setFormatCode('#,##0');
+            } else {
+                $sheet->setCellValue("{$col}{$totalSalesRow}", '');
+            }
+            $sheet->getStyle("{$col}{$totalSalesRow}")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+            $sheet->getStyle("{$col}{$totalSalesRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D');
+            $sheet->getStyle("{$col}{$totalSalesRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        }
+        $currentRow++;
+
+        // 6. Sales Increment Row
+        $incrementRow = $currentRow;
+        $sheet->setCellValue("A{$incrementRow}", 'TOTAL SHOPEE');
+        $sheet->setCellValue("B{$incrementRow}", 'SALES INCREMENT');
+        $sheet->getStyle("A{$incrementRow}:B{$incrementRow}")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+        $sheet->getStyle("A{$incrementRow}:B{$incrementRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D');
+        $sheet->getStyle("A{$incrementRow}:B{$incrementRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getRowDimension($incrementRow)->setRowHeight(22);
+
+        foreach ($hourKeys as $hk) {
+            $col = $colLetters[$hk];
+            $val = $summary['sales_increment'][$hk] ?? null;
+            if ($val !== null) {
+                $sheet->setCellValue("{$col}{$incrementRow}", $val);
+                $sheet->getStyle("{$col}{$incrementRow}")->getNumberFormat()->setFormatCode('#,##0;[Red]-#,##0;"-"');
+            } else {
+                $sheet->setCellValue("{$col}{$incrementRow}", '-');
+            }
+            $sheet->getStyle("{$col}{$incrementRow}")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0F172A'));
+            $sheet->getStyle("{$col}{$incrementRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFF8FAFC');
+            $sheet->getStyle("{$col}{$incrementRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        }
+        $currentRow++;
+
+        // 7. Vs Daily Target Row
+        $targetRow = $currentRow;
+        $sheet->setCellValue("A{$targetRow}", 'TOTAL SHOPEE');
+        $sheet->setCellValue("B{$targetRow}", 'VS DAILY TARGET');
+        $sheet->getStyle("A{$targetRow}:B{$targetRow}")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+        $sheet->getStyle("A{$targetRow}:B{$targetRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEE4D2D');
+        $sheet->getStyle("A{$targetRow}:B{$targetRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getRowDimension($targetRow)->setRowHeight(22);
+
+        foreach ($hourKeys as $hk) {
+            $col = $colLetters[$hk];
+            $pct = $summary['vs_daily_target'][$hk] ?? null;
+            if ($pct !== null) {
+                $sheet->setCellValue("{$col}{$targetRow}", $pct / 100);
+                $sheet->getStyle("{$col}{$targetRow}")->getNumberFormat()->setFormatCode('0%');
+            } else {
+                $sheet->setCellValue("{$col}{$targetRow}", '-');
+            }
+            $sheet->getStyle("{$col}{$targetRow}")->getFont()->setBold(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0F172A'));
+            $sheet->getStyle("{$col}{$targetRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFF7ED');
+            $sheet->getStyle("{$col}{$targetRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        }
+
+        // Apply borders across entire table
+        $borderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FFCBD5E1'],
+                ],
+            ],
+        ];
+        $sheet->getStyle("A1:{$lastCol}{$targetRow}")->applyFromArray($borderStyle);
+
+        // Column widths
+        $sheet->getColumnDimension('A')->setWidth(24);
+        $sheet->getColumnDimension('B')->setWidth(18);
+        foreach ($hourKeys as $hk) {
+            $col = $colLetters[$hk];
+            $sheet->getColumnDimension($col)->setWidth(14);
+        }
+
+        return $this->outputWorkbook($spreadsheet);
+    }
+
     protected function outputWorkbook(Spreadsheet $spreadsheet): string
     {
         $writer = new Xlsx($spreadsheet);

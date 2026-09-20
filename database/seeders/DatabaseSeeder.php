@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
             PlatformSeeder::class,
             ShopSeeder::class,
             HourlyMetricSeeder::class,
+            TikTokHourlyMetricSeeder::class,
+            ShopeeHourlyMetricSeeder::class,
             GeneratedReportSeeder::class,
         ]);
     }

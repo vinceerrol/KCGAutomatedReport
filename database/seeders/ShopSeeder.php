@@ -17,7 +17,32 @@ class ShopSeeder extends Seeder
         $tiktok = Platform::where('code', 'tiktok')->first();
 
         $shops = [
-            // Shopee Shops
+            // Shopee Shops (Official Storefronts)
+            [
+                'platform_id' => $shopee->id,
+                'name' => 'KGOLD BEAUTY (Shopee Mall)',
+                'code' => 'shopee_kgold',
+                'status' => 'active',
+            ],
+            [
+                'platform_id' => $shopee->id,
+                'name' => 'PUREHERB OFFICIAL',
+                'code' => 'shopee_pureherb',
+                'status' => 'active',
+            ],
+            [
+                'platform_id' => $shopee->id,
+                'name' => 'NATURES BEAUTY PH',
+                'code' => 'shopee_natures',
+                'status' => 'active',
+            ],
+            [
+                'platform_id' => $shopee->id,
+                'name' => 'MIDAXX GEN SHOP',
+                'code' => 'shopee_midaxx',
+                'status' => 'active',
+            ],
+            // Legacy / secondary Shopee shops
             [
                 'platform_id' => $shopee->id,
                 'name' => 'Shopee Shop A (Flagship)',
