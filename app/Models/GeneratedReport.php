@@ -12,6 +12,7 @@ class GeneratedReport extends Model
     protected $fillable = [
         'report_date',
         'report_hour',
+        'report_time',
         'total_orders',
         'total_units',
         'gross_sales',

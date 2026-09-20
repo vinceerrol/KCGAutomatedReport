@@ -243,6 +243,7 @@ export interface GeneratedReportItem {
   id: number;
   report_date: string;
   report_hour: number;
+  report_time?: string;
   total_orders: number;
   total_units: number;
   gross_sales: number;
@@ -280,8 +281,8 @@ export const ReportsService = {
     return res.data;
   },
 
-  generateReport: async (date?: string, hour?: number) => {
-    const res = await apiClient.post('/reports/generate', { date, hour });
+  generateReport: async (date?: string, hour?: number, time?: string) => {
+    const res = await apiClient.post('/reports/generate', { date, hour, time });
     return res.data;
   },
 

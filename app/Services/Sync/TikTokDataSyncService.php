@@ -23,7 +23,7 @@ class TikTokDataSyncService
      * @param int|null $hour 0 - 23
      * @param int|null $shopId Optional single shop ID filter
      */
-    public function syncHour(?string $date = null, ?int $hour = null, ?int $shopId = null): array
+    public function syncHour(?string $date = null, ?int $hour = null, ?int $shopId = null, ?Carbon $upToTime = null): array
     {
         $targetDate = $date ?? Carbon::now()->format('Y-m-d');
         $targetHour = $hour !== null ? $hour : Carbon::now()->hour;
@@ -31,6 +31,13 @@ class TikTokDataSyncService
         // Calculate time window in seconds
         $timeFrom = Carbon::parse("{$targetDate} " . sprintf('%02d:00:00', $targetHour))->timestamp;
         $timeTo   = Carbon::parse("{$targetDate} " . sprintf('%02d:59:59', $targetHour))->timestamp;
+
+        // If syncing for current hour or specific up-to timestamp, cap to that moment
+        if ($upToTime !== null) {
+            $timeTo = min($timeTo, $upToTime->timestamp);
+        } elseif ($targetDate === Carbon::now()->format('Y-m-d') && $targetHour === Carbon::now()->hour) {
+            $timeTo = min($timeTo, Carbon::now()->timestamp);
+        }
 
         $platform = Platform::where('code', 'tiktok')->first();
         if (!$platform) {
@@ -104,7 +111,7 @@ class TikTokDataSyncService
                         'hour'        => $targetHour,
                     ],
                     [
-                        'orders_count'=> $ordersCount,
+                        'orders'      => $ordersCount,
                         'units_sold'  => $unitsSold,
                         'gross_sales' => $grossSales,
                         'discounts'   => $discounts,

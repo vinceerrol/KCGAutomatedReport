@@ -195,8 +195,10 @@ class ShopeeApiClient
     protected function getMockOrderList(string $shopId, int $timeFrom, int $timeTo, ?string $reason = null): array
     {
         $hour = Carbon::createFromTimestamp($timeFrom)->hour;
-        // Generate realistic hourly orders between 10 and 45 orders depending on time of day
-        $orderCount = ($hour >= 9 && $hour <= 23) ? rand(15, 38) : rand(3, 12);
+        $durationSeconds = max(60, $timeTo - $timeFrom);
+        $fraction = min(1.0, $durationSeconds / 3600);
+        $baseOrders = ($hour >= 9 && $hour <= 23) ? rand(15, 38) : rand(3, 12);
+        $orderCount = max(1, (int) round($baseOrders * $fraction));
         
         $orderList = [];
         for ($i = 0; $i < $orderCount; $i++) {

@@ -24,7 +24,11 @@ class ReportController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = GeneratedReport::query()->orderByDesc('report_date')->orderByDesc('report_hour');
+        $query = GeneratedReport::query()
+            ->orderByDesc('report_date')
+            ->orderByDesc('report_time')
+            ->orderByDesc('report_hour')
+            ->orderByDesc('id');
 
         if ($request->filled('date')) {
             $query->where('report_date', $request->input('date'));
@@ -46,19 +50,29 @@ class ReportController extends Controller
     }
 
     /**
-     * Generate an hourly snapshot.
+     * Generate a manual real-time or hourly snapshot.
      */
     public function generate(Request $request): JsonResponse
     {
-        $date = $request->input('date') ?: Carbon::now()->format('Y-m-d');
-        $hour = $request->input('hour') !== null ? (int) $request->input('hour') : Carbon::now()->hour;
+        $now = Carbon::now();
+        $date = $request->input('date') ?: $now->format('Y-m-d');
+        $hour = $request->has('hour') && $request->input('hour') !== null ? (int) $request->input('hour') : (int) $now->hour;
+        $time = $request->input('time') ?: $now->format('H:i');
 
         try {
-            $report = $this->reportGenerator->generate($date, $hour);
+            $report = $this->reportGenerator->generate(
+                date: $date,
+                hour: $hour,
+                generatedAt: $now,
+                exactTime: $time,
+                isManual: true
+            );
+
+            $formattedTime = Carbon::createFromFormat('H:i', $report->report_time)->format('h:i A');
 
             return response()->json([
                 'success' => true,
-                'message' => "Hourly report for " . Carbon::parse($report->report_date)->format('M d, Y') . " " . sprintf('%02d:00', $report->report_hour) . " generated successfully!",
+                'message' => "Real-time report snapshot (#{$report->id}) for " . Carbon::parse($report->report_date)->format('M d, Y') . " at {$formattedTime} PHT generated successfully!",
                 'report'  => $report,
             ]);
         } catch (\Throwable $e) {
@@ -76,8 +90,8 @@ class ReportController extends Controller
     {
         $report = GeneratedReport::findOrFail($id);
         $dateStr = $report->report_date->format('Y-m-d');
-        $hourStr = sprintf('%02d00', $report->report_hour);
-        $filename = "hourly_report_{$report->id}_{$dateStr}_{$hourStr}.xlsx";
+        $timeStr = $report->report_time ? str_replace(':', '', $report->report_time) : sprintf('%02d00', $report->report_hour);
+        $filename = "hourly_report_{$report->id}_{$dateStr}_{$timeStr}.xlsx";
 
         $excelBinary = $this->excelExporter->generateSingleReportExcel($report);
 
@@ -95,8 +109,8 @@ class ReportController extends Controller
     {
         $report = GeneratedReport::findOrFail($id);
         $dateStr = $report->report_date->format('Y-m-d');
-        $hourStr = sprintf('%02d00', $report->report_hour);
-        $filename = "hourly_report_{$report->id}_{$dateStr}_{$hourStr}.csv";
+        $timeStr = $report->report_time ? str_replace(':', '', $report->report_time) : sprintf('%02d00', $report->report_hour);
+        $filename = "hourly_report_{$report->id}_{$dateStr}_{$timeStr}.csv";
 
         return response()->streamDownload(function () use ($report, $dateStr, $hourStr) {
             $handle = fopen('php://output', 'w');

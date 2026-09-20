@@ -49,7 +49,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 export const Dashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState('2026-09-19');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toLocaleDateString('en-CA'));
 
   const fetchDashboard = async (date?: string) => {
     setLoading(true);
@@ -67,7 +67,7 @@ export const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDashboard('2026-09-19');
+    fetchDashboard();
   }, []);
 
   if (loading && !data) {

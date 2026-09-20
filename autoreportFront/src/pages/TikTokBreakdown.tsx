@@ -41,7 +41,7 @@ import { TikTokService, PlatformReportData, formatPeso, formatNumber } from '../
 export const TikTokBreakdown: React.FC = () => {
   const [data, setData] = useState<PlatformReportData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState('2026-09-19');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toLocaleDateString('en-CA'));
   const [targetInput, setTargetInput] = useState<number>(670000);
   const [isSimulating, setIsSimulating] = useState(false);
   const [showDispatch, setShowDispatch] = useState(false);
@@ -63,8 +63,12 @@ export const TikTokBreakdown: React.FC = () => {
   const fetchBreakdown = async (date?: string, target?: number) => {
     setLoading(true);
     try {
-      const res = await TikTokService.getBreakdown(date || selectedDate, target || targetInput);
+      const queryDate = date || selectedDate;
+      const res = await TikTokService.getBreakdown(queryDate, target || targetInput);
       setData(res);
+      if (res.report?.meta?.report_date) {
+        setSelectedDate(res.report.meta.report_date);
+      }
       if (res.report?.meta?.daily_target) {
         setTargetInput(res.report.meta.daily_target);
       }
@@ -76,7 +80,7 @@ export const TikTokBreakdown: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchBreakdown('2026-09-19', 670000);
+    fetchBreakdown();
   }, []);
 
   const handleDateChange = (newDate: string) => {

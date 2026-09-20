@@ -139,7 +139,7 @@ export const Reports: React.FC = () => {
                 <TableRow>
                   <TableCell>Report ID</TableCell>
                   <TableCell>Period Date</TableCell>
-                  <TableCell>Hour (PHT)</TableCell>
+                  <TableCell>Time (PHT)</TableCell>
                   <TableCell align="right">Orders</TableCell>
                   <TableCell align="right">Units</TableCell>
                   <TableCell align="right">Gross Sales</TableCell>
@@ -156,7 +156,7 @@ export const Reports: React.FC = () => {
                     <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700 }}>#{r.id}</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>{r.report_date}</TableCell>
                     <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                      {String(r.report_hour).padStart(2, '0')}:00
+                      {r.report_time || `${String(r.report_hour).padStart(2, '0')}:00`}
                     </TableCell>
                     <TableCell align="right" sx={{ fontFamily: 'monospace' }}>{formatNumber(r.total_orders)}</TableCell>
                     <TableCell align="right" sx={{ fontFamily: 'monospace' }}>{formatNumber(r.total_units)}</TableCell>
@@ -229,7 +229,7 @@ export const Reports: React.FC = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                 <Typography variant="body2">
-                  <strong>Reporting Period:</strong> {selectedReport.report_date} at {String(selectedReport.report_hour).padStart(2, '0')}:00 (PHT)
+                  <strong>Reporting Period:</strong> {selectedReport.report_date} at {selectedReport.report_time || `${String(selectedReport.report_hour).padStart(2, '0')}:00`} (PHT)
                 </Typography>
                 <Typography variant="body2">
                   <strong>Generated At:</strong> {new Date(selectedReport.generated_at).toLocaleString()}

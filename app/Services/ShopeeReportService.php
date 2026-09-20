@@ -55,7 +55,7 @@ class ShopeeReportService
      */
     public function getHourlyBreakdown(?string $date = null, ?float $target = null): array
     {
-        $targetDate = $date ?? '2026-09-19';
+        $targetDate = $date ?? Carbon::today()->format('Y-m-d');
         $dailyTarget = $target !== null && $target > 0 ? $target : self::DEFAULT_DAILY_TARGET;
 
         // Fetch official Shopee platform & shops
@@ -223,8 +223,9 @@ class ShopeeReportService
     /**
      * Simulate or automate the 12:00 AM (midnight) snapshot for Shopee.
      */
-    public function simulateMidnight(string $date = '2026-09-19'): void
+    public function simulateMidnight(?string $date = null): void
     {
+        $targetDate = $date ?? Carbon::today()->format('Y-m-d');
         $platform = Platform::where('code', 'shopee')->first();
         if (!$platform) return;
 
@@ -244,7 +245,7 @@ class ShopeeReportService
         foreach ($midnightData as $code => $d) {
             if ($shop = $shops->get($code)) {
                 HourlyMetric::updateOrCreate(
-                    ['shop_id' => $shop->id, 'report_date' => $date, 'hour' => 24],
+                    ['shop_id' => $shop->id, 'report_date' => $targetDate, 'hour' => 24],
                     [
                         'orders'      => $d['orders'],
                         'units_sold'  => (int)round($d['orders'] * 1.3),

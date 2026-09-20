@@ -57,7 +57,7 @@ class TikTokReportService
      */
     public function getHourlyBreakdown(?string $date = null, ?float $target = null): array
     {
-        $targetDate = $date ?? '2026-09-19';
+        $targetDate = $date ?? Carbon::today()->format('Y-m-d');
         $dailyTarget = $target !== null && $target > 0 ? $target : self::DEFAULT_DAILY_TARGET;
 
         // Fetch official TikTok shops
@@ -220,8 +220,9 @@ class TikTokReportService
     /**
      * Simulate or automate the 12:00 AM (midnight) snapshot to complete the 24-hour cycle.
      */
-    public function simulateMidnight(string $date = '2026-09-19'): void
+    public function simulateMidnight(?string $date = null): void
     {
+        $targetDate = $date ?? Carbon::today()->format('Y-m-d');
         $shops = Shop::whereIn('code', array_keys(self::TIKTOK_SHOPS))->get()->keyBy('code');
 
         // Projected midnight incremental performance (final flash rush)
@@ -237,7 +238,7 @@ class TikTokReportService
         foreach ($midnightData as $code => $d) {
             if ($shop = $shops->get($code)) {
                 HourlyMetric::updateOrCreate(
-                    ['shop_id' => $shop->id, 'report_date' => $date, 'hour' => 24],
+                    ['shop_id' => $shop->id, 'report_date' => $targetDate, 'hour' => 24],
                     [
                         'orders'      => $d['orders'],
                         'units_sold'  => (int)round($d['orders'] * 1.25),

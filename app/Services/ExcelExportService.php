@@ -23,7 +23,7 @@ class ExcelExportService
 
         $dateStr = $report->report_date->format('Y-m-d');
         $dateFormatted = $report->report_date->format('F d, Y');
-        $formattedHour = sprintf('%02d:00', $report->report_hour);
+        $formattedTime = $report->report_time ?: sprintf('%02d:00', $report->report_hour);
 
         // 1. Report Title Header
         $sheet->setCellValue('A1', "HOURLY SALES REPORT — SNAPSHOT #{$report->id}");
@@ -33,7 +33,7 @@ class ExcelExportService
         $sheet->getRowDimension(1)->setRowHeight(28);
 
         // 2. Metadata Subtitle
-        $sheet->setCellValue('A2', "Date: {$dateFormatted} | Hour: {$formattedHour} (PHT) | Generated: {$report->generated_at->format('Y-m-d H:i:s')} | Status: " . strtoupper($report->status));
+        $sheet->setCellValue('A2', "Date: {$dateFormatted} | Time: {$formattedTime} (PHT) | Generated: {$report->generated_at->format('Y-m-d H:i:s')} | Status: " . strtoupper($report->status));
         $sheet->mergeCells('A2:N2');
         $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
         $sheet->getRowDimension(2)->setRowHeight(20);
@@ -225,10 +225,11 @@ class ExcelExportService
 
         $row = 2;
         foreach ($reports as $r) {
+            $timeStr = $r->report_time ?: sprintf('%02d:00', $r->report_hour);
             $sheet->setCellValue("A{$row}", $r->id);
             $sheet->setCellValueExplicit("B{$row}", $r->report_date->format('Y-m-d'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue("C{$row}", $r->report_hour);
-            $sheet->setCellValueExplicit("D{$row}", sprintf('%02d:00', $r->report_hour), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit("D{$row}", $timeStr, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue("E{$row}", (int)$r->total_orders);
             $sheet->setCellValue("F{$row}", (int)$r->total_units);
             $sheet->setCellValue("G{$row}", (float)$r->gross_sales);
@@ -300,11 +301,12 @@ class ExcelExportService
         $row = 2;
         foreach ($reports as $r) {
             $shops = $r->report_data['shops'] ?? [];
+            $timeStr = $r->report_time ?: sprintf('%02d:00', $r->report_hour);
             foreach ($shops as $s) {
                 $sheet->setCellValue("A{$row}", $r->id);
                 $sheet->setCellValueExplicit("B{$row}", $r->report_date->format('Y-m-d'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                 $sheet->setCellValue("C{$row}", $r->report_hour);
-                $sheet->setCellValueExplicit("D{$row}", sprintf('%02d:00', $r->report_hour), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("D{$row}", $timeStr, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                 $sheet->setCellValue("E{$row}", $s['platform_name'] ?? 'N/A');
                 $sheet->setCellValue("F{$row}", $s['shop_name'] ?? 'N/A');
                 $sheet->setCellValue("G{$row}", $s['shop_code'] ?? 'N/A');

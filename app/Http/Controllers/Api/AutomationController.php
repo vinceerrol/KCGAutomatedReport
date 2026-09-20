@@ -45,12 +45,21 @@ class AutomationController extends Controller
      */
     public function run(): JsonResponse
     {
+        $now = Carbon::now();
         try {
-            $report = $this->reportGenerator->generate();
+            $report = $this->reportGenerator->generate(
+                date: $now->format('Y-m-d'),
+                hour: (int) $now->hour,
+                generatedAt: $now,
+                exactTime: $now->format('H:i'),
+                isManual: true
+            );
+
+            $formattedTime = Carbon::createFromFormat('H:i', $report->report_time)->format('h:i A');
 
             return response()->json([
                 'success' => true,
-                'message' => "Hourly consolidated report (#{$report->id}) generated successfully at " . Carbon::now()->format('h:i:s A'),
+                'message' => "Real-time consolidated report (#{$report->id}) generated successfully at {$formattedTime} PHT",
                 'report'  => $report,
             ]);
         } catch (\Throwable $e) {

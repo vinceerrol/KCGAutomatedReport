@@ -17,29 +17,48 @@ class ReportGeneratorService
     ) {}
 
     /**
-     * Generate an hourly sales report for the given date and hour.
+     * Generate an hourly or exact-time sales report for the given date, hour, and time.
      *
      * @param string|null $date Format: Y-m-d (defaults to today)
-     * @param int|null $hour Hour 0-23 (defaults to current or latest available hour)
+     * @param int|null $hour Hour 0-23 (defaults to current hour)
+     * @param Carbon|null $generatedAt Specific generation timestamp
+     * @param string|null $exactTime Exact time in H:i format (e.g. "14:10")
+     * @param bool $isManual Whether this snapshot was manually triggered
      * @return GeneratedReport
      */
-    public function generate(?string $date = null, ?int $hour = null, ?Carbon $generatedAt = null): GeneratedReport
-    {
-        $targetDate = $date ?? Carbon::now()->format('Y-m-d');
-        $targetHour = $hour ?? Carbon::now()->hour;
+    public function generate(
+        ?string $date = null,
+        ?int $hour = null,
+        ?Carbon $generatedAt = null,
+        ?string $exactTime = null,
+        bool $isManual = false
+    ): GeneratedReport {
         $timestamp = $generatedAt ?? Carbon::now();
+        $targetDate = $date ?? $timestamp->format('Y-m-d');
+        $targetHour = $hour ?? (int) $timestamp->hour;
+
+        // If exactTime is provided, use it; if manual, default to current minute (e.g. "14:10"); otherwise top of hour ("14:00")
+        if (!empty($exactTime)) {
+            $targetTime = $exactTime;
+        } elseif ($isManual) {
+            $targetTime = $timestamp->format('H:i');
+        } else {
+            $targetTime = sprintf('%02d:00', $targetHour);
+        }
 
         try {
-            return DB::transaction(function () use ($targetDate, $targetHour, $timestamp) {
+            return DB::transaction(function () use ($targetDate, $targetHour, $targetTime, $timestamp, $isManual) {
                 // 1. Fetch hourly metrics for this date & hour
                 $metrics = $this->platformDataService->fetchHourlyMetrics($targetDate, $targetHour);
 
-                // If no direct records exist for this exact hour, get the latest hour for that date
-                if ($metrics->isEmpty()) {
-                    $latestHour = \App\Models\HourlyMetric::where('report_date', $targetDate)->max('hour');
-                    if ($latestHour !== null) {
-                        $targetHour = (int) $latestHour;
+                // For manual real-time generation or if no records exist, synchronize live metrics up to this exact time
+                if ($isManual || $metrics->isEmpty()) {
+                    try {
+                        app(\App\Services\Sync\ShopeeDataSyncService::class)->syncHour($targetDate, $targetHour, null, $timestamp);
+                        app(\App\Services\Sync\TikTokDataSyncService::class)->syncHour($targetDate, $targetHour, null, $timestamp);
                         $metrics = $this->platformDataService->fetchHourlyMetrics($targetDate, $targetHour);
+                    } catch (\Throwable $syncErr) {
+                        Log::warning("Live sync during report generation failed: " . $syncErr->getMessage());
                     }
                 }
 
@@ -62,7 +81,9 @@ class ReportGeneratorService
                         'generated_at' => $timestamp->toIso8601String(),
                         'report_date' => $targetDate,
                         'report_hour' => $targetHour,
-                        'source' => 'DemoPlatformDataService (PROTOTYPE)',
+                        'report_time' => $targetTime,
+                        'mode'        => $isManual ? 'manual_realtime' : 'scheduled_hourly',
+                        'source'      => 'Automated Live Ingestion & Snapshot Pipeline',
                     ],
                     'summary' => [
                         'orders' => $totalOrders,
@@ -76,26 +97,31 @@ class ReportGeneratorService
                     'shops' => $shopSummary->toArray(),
                 ];
 
-                // 5. Store Generated Report
-                $report = GeneratedReport::create([
-                    'report_date' => $targetDate,
-                    'report_hour' => $targetHour,
-                    'total_orders' => $totalOrders,
-                    'total_units' => $totalUnits,
-                    'gross_sales' => $grossSales,
-                    'discounts' => $discounts,
-                    'refunds' => $refunds,
-                    'net_sales' => $netSales,
-                    'report_data' => $reportSnapshot,
-                    'generated_at' => $timestamp,
-                    'status' => 'completed',
-                ]);
+                // 5. Store or Update Generated Report keyed by date and exact time
+                $report = GeneratedReport::updateOrCreate(
+                    [
+                        'report_date' => $targetDate,
+                        'report_time' => $targetTime,
+                    ],
+                    [
+                        'report_hour'  => $targetHour,
+                        'total_orders' => $totalOrders,
+                        'total_units'  => $totalUnits,
+                        'gross_sales'  => $grossSales,
+                        'discounts'    => $discounts,
+                        'refunds'      => $refunds,
+                        'net_sales'    => $netSales,
+                        'report_data'  => $reportSnapshot,
+                        'generated_at' => $timestamp,
+                        'status'       => 'completed',
+                    ]
+                );
 
                 // 6. Log Automation Success
                 AutomationLog::create([
-                    'job' => 'Report Generation',
+                    'job' => $isManual ? 'Manual Snapshot Generation' : 'Report Generation',
                     'status' => 'SUCCESS',
-                    'message' => "Generated hourly report for {$targetDate} " . sprintf('%02d:00', $targetHour) . " ({$totalOrders} orders, ₱" . number_format($netSales, 2) . " net sales)",
+                    'message' => "Generated " . ($isManual ? "manual real-time" : "hourly") . " report for {$targetDate} {$targetTime} ({$totalOrders} orders, ₱" . number_format($netSales, 2) . " net sales)",
                     'created_at' => $timestamp,
                 ]);
 

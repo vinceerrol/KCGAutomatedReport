@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AutomationLog;
+use App\Models\HourlyMetric;
 use App\Services\ExcelExportService;
 use App\Services\ShopeeReportService;
 use Carbon\Carbon;
@@ -24,7 +25,8 @@ class ShopeeReportController extends Controller
     public function index(Request $request): JsonResponse
     {
         $today = Carbon::today()->format('Y-m-d');
-        $selectedDate = $request->input('date', '2026-09-19');
+        $defaultDate = $this->getDefaultDate();
+        $selectedDate = $request->input('date', $defaultDate);
         $target = (float) $request->input('target', ShopeeReportService::DEFAULT_DAILY_TARGET);
 
         $breakdown = $this->shopeeService->getHourlyBreakdown($selectedDate, $target);
@@ -48,7 +50,7 @@ class ShopeeReportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $selectedDate = $request->input('date', '2026-09-19');
+        $selectedDate = $request->input('date', $this->getDefaultDate());
         $target = (float) $request->input('target', ShopeeReportService::DEFAULT_DAILY_TARGET);
 
         $breakdown = $this->shopeeService->getHourlyBreakdown($selectedDate, $target);
@@ -68,7 +70,7 @@ class ShopeeReportController extends Controller
      */
     public function exportCsv(Request $request): StreamedResponse
     {
-        $selectedDate = $request->input('date', '2026-09-19');
+        $selectedDate = $request->input('date', $this->getDefaultDate());
         $target = (float) $request->input('target', ShopeeReportService::DEFAULT_DAILY_TARGET);
 
         $breakdown = $this->shopeeService->getHourlyBreakdown($selectedDate, $target);
@@ -138,7 +140,7 @@ class ShopeeReportController extends Controller
      */
     public function simulateMidnight(Request $request): JsonResponse
     {
-        $selectedDate = $request->input('date', '2026-09-19');
+        $selectedDate = $request->input('date', $this->getDefaultDate());
         $this->shopeeService->simulateMidnight($selectedDate);
 
         return response()->json([
@@ -165,5 +167,25 @@ class ShopeeReportController extends Controller
             'sync'      => $result,
             'report'    => $breakdown,
         ]);
+    }
+
+    /**
+     * Get the default reporting date for Shopee (today if metrics exist, or latest available date).
+     */
+    protected function getDefaultDate(): string
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        $hasTodayData = HourlyMetric::where('report_date', $today)
+            ->whereHas('shop.platform', fn ($q) => $q->where('code', 'shopee'))
+            ->exists();
+
+        if ($hasTodayData) {
+            return $today;
+        }
+
+        $latestDate = HourlyMetric::whereHas('shop.platform', fn ($q) => $q->where('code', 'shopee'))
+            ->max('report_date');
+
+        return $latestDate ? Carbon::parse($latestDate)->format('Y-m-d') : $today;
     }
 }

@@ -229,7 +229,10 @@ class TikTokApiClient
     protected function getMockOrdersSearch(string $shopCipher, int $timeFrom, int $timeTo, ?string $reason = null): array
     {
         $hour = Carbon::createFromTimestamp($timeFrom)->hour;
-        $orderCount = ($hour >= 9 && $hour <= 23) ? rand(12, 34) : rand(2, 9);
+        $durationSeconds = max(60, $timeTo - $timeFrom);
+        $fraction = min(1.0, $durationSeconds / 3600);
+        $baseOrders = ($hour >= 9 && $hour <= 23) ? rand(12, 34) : rand(2, 9);
+        $orderCount = max(1, (int) round($baseOrders * $fraction));
 
         $orders = [];
         for ($i = 0; $i < $orderCount; $i++) {
