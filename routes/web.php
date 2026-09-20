@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\TikTokReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,8 +37,17 @@ Route::prefix('reports')->name('reports.')->group(function () {
     Route::get('/{id}/hourly_report_{report_id}.csv', [ReportController::class, 'exportSingle'])->name('export.single.named');
 });
 
+// TikTok Hourly GMV Breakdown Automation Feature
+Route::prefix('tiktok')->name('tiktok.')->group(function () {
+    Route::get('/', [TikTokReportController::class, 'index'])->name('index');
+    Route::get('/export/excel', [TikTokReportController::class, 'exportExcel'])->name('export.excel');
+    Route::get('/export/csv', [TikTokReportController::class, 'exportCsv'])->name('export.csv');
+    Route::post('/simulate-midnight', [TikTokReportController::class, 'simulateMidnight'])->name('simulate.midnight');
+});
+
 Route::get('/shops', [ShopController::class, 'index'])->name('shops.index');
 Route::get('/platforms', [PlatformController::class, 'index'])->name('platforms.index');
+Route::get('/platforms/tiktok', [TikTokReportController::class, 'index'])->name('platforms.tiktok');
 
 Route::prefix('automation')->name('automation.')->group(function () {
     Route::get('/', [AutomationController::class, 'index'])->name('index');

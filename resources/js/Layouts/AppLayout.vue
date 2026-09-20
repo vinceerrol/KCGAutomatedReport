@@ -14,7 +14,8 @@ import {
     CheckCircle2,
     AlertCircle,
     Menu,
-    X
+    X,
+    TrendingUp
 } from 'lucide-vue-next';
 import { Toaster, toast } from 'vue-sonner';
 
@@ -28,6 +29,7 @@ const mobileMenuOpen = ref(false);
 
 const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard, current: (url: string) => url === '/' },
+    { name: 'TikTok Breakdown', href: '/tiktok', icon: TrendingUp, current: (url: string) => url.startsWith('/tiktok'), highlight: true },
     { name: 'Reports', href: '/reports', icon: FileSpreadsheet, current: (url: string) => url.startsWith('/reports') },
     { name: 'Shops', href: '/shops', icon: Store, current: (url: string) => url.startsWith('/shops') },
     { name: 'Platforms', href: '/platforms', icon: Layers, current: (url: string) => url.startsWith('/platforms') },
@@ -138,15 +140,18 @@ function triggerReportGeneration() {
                             v-for="item in navItems"
                             :key="item.name"
                             :href="item.href"
-                            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition duration-150"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition duration-150"
                             :class="[
                                 item.current(page.url)
-                                    ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-2xs border border-indigo-100'
+                                    ? (item.highlight ? 'bg-rose-50 text-rose-700 font-semibold shadow-2xs border border-rose-200' : 'bg-indigo-50 text-indigo-700 font-semibold shadow-2xs border border-indigo-100')
                                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                             ]"
                         >
-                            <component :is="item.icon" class="w-4 h-4" :stroke-width="1.75" />
-                            {{ item.name }}
+                            <component :is="item.icon" class="w-4 h-4" :class="item.highlight ? 'text-rose-600' : ''" :stroke-width="1.75" />
+                            <span>{{ item.name }}</span>
+                            <span v-if="item.highlight" class="ml-0.5 px-1.5 py-0.2 bg-rose-500 text-white rounded text-[10px] font-black uppercase tracking-wider">
+                                New
+                            </span>
                         </Link>
                     </nav>
 

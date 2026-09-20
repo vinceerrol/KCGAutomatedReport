@@ -354,6 +354,38 @@ const platformShares = computed(() => {
             </div>
         </div>
 
+        <!-- Featured Spotlight: TikTok Hourly Breakdown Automation -->
+        <div class="mb-6 bg-gradient-to-r from-rose-900 via-rose-800 to-slate-900 rounded-2xl p-5 text-white shadow-md relative overflow-hidden border border-rose-700/50">
+            <div class="absolute -right-10 -top-10 w-48 h-48 bg-rose-500/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ff0050] to-[#e11d48] text-white flex items-center justify-center font-black text-lg shadow-sm shadow-rose-500/30 shrink-0">
+                        TT
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-base font-bold text-white tracking-tight">TikTok Hourly Breakdown Automation</h3>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/30 text-rose-200 border border-rose-400/40">
+                                Live Matrix
+                            </span>
+                        </div>
+                        <p class="text-xs text-rose-100/80 mt-0.5 max-w-2xl">
+                            Hourly GMV, Ad Spend, Orders, and ROAS per shop by hour (9:00 AM – 12:00 AM) across all 6 TikTok storefronts with Excel export and group chat dispatch.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Link
+                        href="/tiktok"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-900 rounded-xl text-xs font-bold shadow-sm transition active:scale-95 shrink-0"
+                    >
+                        <span>Open TikTok Matrix</span>
+                        <ChevronRight class="w-4 h-4 text-rose-700" :stroke-width="2.5" />
+                    </Link>
+                </div>
+            </div>
+        </div>
+
         <!-- 4. Hourly Performance Line Chart & Metrics Breakdown -->
         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs mb-6">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 gap-2">
