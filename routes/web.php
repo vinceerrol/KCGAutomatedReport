@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\Route;
 
 $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
 
+// Handle rogue/leftover browser service workers by unregistering them immediately
+Route::get('/sw.js', function () {
+    return response("self.addEventListener('install', () => self.skipWaiting()); self.addEventListener('activate', () => self.registration.unregister());", 200, [
+        'Content-Type' => 'application/javascript',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+    ]);
+});
+
 // Redirect web pages directly to standalone React 19 Frontend
 Route::get('/', fn () => redirect($frontendUrl))->name('dashboard');
 Route::get('/shopee', fn () => redirect("{$frontendUrl}/shopee"))->name('shopee.index');
