@@ -146,4 +146,24 @@ class TikTokReportController extends Controller
             'message' => 'Simulated TikTok 12:00 AM Midnight push recorded successfully!',
         ]);
     }
+
+    /**
+     * Trigger live synchronization from TikTok Shop Open API for date and hour.
+     */
+    public function sync(Request $request, \App\Services\Sync\TikTokDataSyncService $syncService): JsonResponse
+    {
+        $date = $request->input('date', Carbon::now()->format('Y-m-d'));
+        $hour = $request->has('hour') ? (int) $request->input('hour') : Carbon::now()->hour;
+        $shopId = $request->has('shop_id') ? (int) $request->input('shop_id') : null;
+
+        $result = $syncService->syncHour($date, $hour, $shopId);
+        $breakdown = $this->tikTokService->getHourlyBreakdown($date);
+
+        return response()->json([
+            'success'   => true,
+            'message'   => "Successfully synchronized {$result['total_orders']} orders from TikTok Shop Open API.",
+            'sync'      => $result,
+            'report'    => $breakdown,
+        ]);
+    }
 }

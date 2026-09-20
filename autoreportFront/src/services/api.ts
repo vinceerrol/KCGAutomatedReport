@@ -197,6 +197,11 @@ export const ShopeeService = {
     const res = await apiClient.post('/shopee/simulate-midnight', { date });
     return res.data;
   },
+
+  sync: async (date?: string, hour?: number, shopId?: number) => {
+    const res = await apiClient.post('/shopee/sync', { date, hour, shop_id: shopId });
+    return res.data;
+  },
 };
 
 // 4. TikTok Service
@@ -224,6 +229,11 @@ export const TikTokService = {
 
   simulateMidnight: async (date?: string) => {
     const res = await apiClient.post('/tiktok/simulate-midnight', { date });
+    return res.data;
+  },
+
+  sync: async (date?: string, hour?: number, shopId?: number) => {
+    const res = await apiClient.post('/tiktok/sync', { date, hour, shop_id: shopId });
     return res.data;
   },
 };
@@ -310,9 +320,37 @@ export const ShopsService = {
   },
 };
 
+export interface ConnectorPlatformInfo {
+  platform: string;
+  api_version: string;
+  mode: string;
+  base_url: string;
+  configured: boolean;
+  partner_id?: string | null;
+  app_key?: string | null;
+  timeout_sec: number;
+  shops_count: number;
+  shops_configured: number;
+  auth_type: string;
+  orders_endpoint: string;
+  order_detail_endpoint: string;
+  refresh_endpoint: string;
+}
+
+export interface ConnectorsStatusData {
+  shopee: ConnectorPlatformInfo;
+  tiktok: ConnectorPlatformInfo;
+  server_time_pht: string;
+}
+
 export const PlatformsService = {
   getPlatforms: async () => {
     const res = await apiClient.get('/platforms');
+    return res.data;
+  },
+
+  getConnectorsStatus: async (): Promise<ConnectorsStatusData> => {
+    const res = await apiClient.get<ConnectorsStatusData>('/platforms/connectors-status');
     return res.data;
   },
 };

@@ -35,4 +35,34 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Shopee Open Platform API v2 Configuration
+    |--------------------------------------------------------------------------
+    | Official Shopee Open Platform API credentials for hourly data sync.
+    | Modes: 'live' (production), 'sandbox' (test-stable), or 'mock' (fallback).
+    */
+    'shopee' => [
+        'partner_id'   => env('SHOPEE_PARTNER_ID'),
+        'partner_key'  => env('SHOPEE_PARTNER_KEY'),
+        'base_url'     => env('SHOPEE_BASE_URL', 'https://partner.shopeemobile.com'),
+        'mode'         => env('SHOPEE_API_MODE', 'mock'),
+        'timeout'      => (int) env('SHOPEE_API_TIMEOUT', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | TikTok Shop Open API (v202309 / v202404) Configuration
+    |--------------------------------------------------------------------------
+    | Official TikTok Shop Open API credentials for hourly data sync.
+    | Modes: 'live' (production), 'sandbox' (sandbox-partner), or 'mock' (fallback).
+    */
+    'tiktok' => [
+        'app_key'      => env('TIKTOK_APP_KEY'),
+        'app_secret'   => env('TIKTOK_APP_SECRET'),
+        'base_url'     => env('TIKTOK_BASE_URL', 'https://open-api.tiktokglobalshop.com'),
+        'mode'         => env('TIKTOK_API_MODE', 'mock'),
+        'timeout'      => (int) env('TIKTOK_API_TIMEOUT', 15),
+    ],
+
 ];

@@ -22,6 +22,7 @@ Route::get('/dashboard', [DashboardController::class, 'index']);
 // Shopee Independent Reporting Pipeline
 Route::prefix('shopee')->group(function () {
     Route::get('/', [ShopeeReportController::class, 'index']);
+    Route::post('/sync', [ShopeeReportController::class, 'sync']);
     Route::get('/export/excel', [ShopeeReportController::class, 'exportExcel']);
     Route::get('/export/csv', [ShopeeReportController::class, 'exportCsv']);
     Route::post('/simulate-midnight', [ShopeeReportController::class, 'simulateMidnight']);
@@ -30,6 +31,7 @@ Route::prefix('shopee')->group(function () {
 // TikTok Independent Reporting Pipeline
 Route::prefix('tiktok')->group(function () {
     Route::get('/', [TikTokReportController::class, 'index']);
+    Route::post('/sync', [TikTokReportController::class, 'sync']);
     Route::get('/export/excel', [TikTokReportController::class, 'exportExcel']);
     Route::get('/export/csv', [TikTokReportController::class, 'exportCsv']);
     Route::post('/simulate-midnight', [TikTokReportController::class, 'simulateMidnight']);
@@ -49,8 +51,9 @@ Route::prefix('reports')->group(function () {
 // Storefronts Directory
 Route::get('/shops', [ShopController::class, 'index']);
 
-// Platforms Connector Hub
+// Platforms Connector Hub & Open API Credentials Status
 Route::get('/platforms', [PlatformController::class, 'index']);
+Route::get('/platforms/connectors-status', [PlatformController::class, 'connectorsStatus']);
 
 // Automation Engine & Logs
 Route::prefix('automation')->group(function () {

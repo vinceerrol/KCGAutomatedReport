@@ -3,13 +3,16 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+        "dev": "concurrently -n \"API,FRONT\" -c \"blue,magenta\" \"php artisan serve\" \"npm run dev --prefix autoreportFront\"",
+        "dev:front": "npm run dev --prefix autoreportFront",
+        "dev:api": "php artisan serve",
+        "build": "npm run build --prefix autoreportFront"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
         "@types/node": "^26.6.1",
         "axios": "^1.11.0",
+        "concurrently": "^10.0.5",
         "laravel-vite-plugin": "^2.0.0",
         "tailwindcss": "^4.0.0",
         "typescript": "^7.0.2",

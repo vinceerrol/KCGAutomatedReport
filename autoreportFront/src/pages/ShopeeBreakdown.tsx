@@ -33,6 +33,7 @@ import {
   CheckRounded,
   CloseRounded,
   TrendingUpRounded,
+  SyncRounded,
   ShoppingBagRounded,
   TrackChangesRounded,
   AttachMoneyRounded,
@@ -48,6 +49,19 @@ export const ShopeeBreakdown: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [showDispatch, setShowDispatch] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncApi = async () => {
+    setIsSyncing(true);
+    try {
+      await ShopeeService.sync(selectedDate);
+      await fetchBreakdown(selectedDate, targetInput);
+    } catch (err) {
+      console.error('Failed to sync Shopee Open API:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const fetchBreakdown = async (date?: string, target?: number) => {
     setLoading(true);
@@ -216,6 +230,17 @@ export const ShopeeBreakdown: React.FC = () => {
             }}
             sx={{ width: 170 }}
           />
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleSyncApi}
+            disabled={isSyncing}
+            startIcon={isSyncing ? <CircularProgress size={16} color="inherit" /> : <SyncRounded />}
+            sx={{ borderColor: '#EE4D2D', color: '#EE4D2D', '&:hover': { borderColor: '#C7381B', bgcolor: '#FFF0EB' }, fontWeight: 700 }}
+          >
+            {isSyncing ? 'Syncing...' : 'Sync Shopee API'}
+          </Button>
 
           <Button
             variant="contained"

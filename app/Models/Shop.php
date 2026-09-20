@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,16 @@ class Shop extends Model
         'name',
         'code',
         'status',
+        'external_shop_id',
+        'access_token',
+        'refresh_token',
+        'token_expires_at',
+        'extra_credentials',
+    ];
+
+    protected $casts = [
+        'extra_credentials' => 'array',
+        'token_expires_at'  => 'datetime',
     ];
 
     /**
@@ -32,5 +43,25 @@ class Shop extends Model
     public function hourlyMetrics(): HasMany
     {
         return $this->hasMany(HourlyMetric::class);
+    }
+
+    /**
+     * Check if the API OAuth token has expired or is expiring soon (within 5 minutes).
+     */
+    public function isTokenExpired(): bool
+    {
+        if (!$this->token_expires_at) {
+            return true;
+        }
+
+        return Carbon::now()->addMinutes(5)->greaterThanOrEqualTo($this->token_expires_at);
+    }
+
+    /**
+     * Check if the shop has credentials configured for live API calls.
+     */
+    public function hasValidApiCredentials(): bool
+    {
+        return !empty($this->access_token) && !empty($this->external_shop_id);
     }
 }

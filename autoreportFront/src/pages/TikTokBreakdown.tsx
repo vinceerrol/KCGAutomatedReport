@@ -34,6 +34,7 @@ import {
   TrendingUpRounded,
   TrackChangesRounded,
   AutoAwesomeRounded,
+  SyncRounded,
 } from '@mui/icons-material';
 import { TikTokService, PlatformReportData, formatPeso, formatNumber } from '../services/api';
 
@@ -45,6 +46,19 @@ export const TikTokBreakdown: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [showDispatch, setShowDispatch] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncApi = async () => {
+    setIsSyncing(true);
+    try {
+      await TikTokService.sync(selectedDate);
+      await fetchBreakdown(selectedDate, targetInput);
+    } catch (err) {
+      console.error('Failed to sync TikTok Shop Open API:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const fetchBreakdown = async (date?: string, target?: number) => {
     setLoading(true);
@@ -212,6 +226,17 @@ export const TikTokBreakdown: React.FC = () => {
             }}
             sx={{ width: 170 }}
           />
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleSyncApi}
+            disabled={isSyncing}
+            startIcon={isSyncing ? <CircularProgress size={16} color="inherit" /> : <SyncRounded />}
+            sx={{ borderColor: '#E11D48', color: '#E11D48', '&:hover': { borderColor: '#BE123C', bgcolor: '#FFF1F2' }, fontWeight: 700 }}
+          >
+            {isSyncing ? 'Syncing...' : 'Sync TikTok API'}
+          </Button>
 
           <Button
             variant="contained"
