@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AutomationLog;
+use App\Models\HourlyMetric;
 use App\Services\ExcelExportService;
 use App\Services\TikTokReportService;
 use Carbon\Carbon;
@@ -24,7 +25,8 @@ class TikTokReportController extends Controller
     public function index(Request $request): JsonResponse
     {
         $today = Carbon::today()->format('Y-m-d');
-        $selectedDate = $request->input('date', '2026-09-19');
+        $defaultDate = $this->getDefaultDate();
+        $selectedDate = $request->input('date', $defaultDate);
         $target = (float) $request->input('target', TikTokReportService::DEFAULT_DAILY_TARGET);
 
         $breakdown = $this->tikTokService->getHourlyBreakdown($selectedDate, $target);
@@ -48,7 +50,7 @@ class TikTokReportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $selectedDate = $request->input('date', '2026-09-19');
+        $selectedDate = $request->input('date', $this->getDefaultDate());
         $target = (float) $request->input('target', TikTokReportService::DEFAULT_DAILY_TARGET);
 
         $breakdown = $this->tikTokService->getHourlyBreakdown($selectedDate, $target);
@@ -68,7 +70,7 @@ class TikTokReportController extends Controller
      */
     public function exportCsv(Request $request): StreamedResponse
     {
-        $selectedDate = $request->input('date', '2026-09-19');
+        $selectedDate = $request->input('date', $this->getDefaultDate());
         $target = (float) $request->input('target', TikTokReportService::DEFAULT_DAILY_TARGET);
 
         $breakdown = $this->tikTokService->getHourlyBreakdown($selectedDate, $target);
@@ -138,7 +140,7 @@ class TikTokReportController extends Controller
      */
     public function simulateMidnight(Request $request): JsonResponse
     {
-        $selectedDate = $request->input('date', '2026-09-19');
+        $selectedDate = $request->input('date', $this->getDefaultDate());
         $this->tikTokService->simulateMidnight($selectedDate);
 
         return response()->json([
@@ -148,22 +150,22 @@ class TikTokReportController extends Controller
     }
 
     /**
-     * Trigger live synchronization from TikTok Shop Open API for date and hour.
+     * Get the default reporting date for TikTok (today if metrics exist, or latest available date).
      */
-    public function sync(Request $request, \App\Services\Sync\TikTokDataSyncService $syncService): JsonResponse
+    protected function getDefaultDate(): string
     {
-        $date = $request->input('date', Carbon::now()->format('Y-m-d'));
-        $hour = $request->has('hour') ? (int) $request->input('hour') : Carbon::now()->hour;
-        $shopId = $request->has('shop_id') ? (int) $request->input('shop_id') : null;
+        $today = Carbon::today()->format('Y-m-d');
+        $hasTodayData = HourlyMetric::where('report_date', $today)
+            ->whereHas('shop.platform', fn ($q) => $q->where('code', 'tiktok'))
+            ->exists();
 
-        $result = $syncService->syncHour($date, $hour, $shopId);
-        $breakdown = $this->tikTokService->getHourlyBreakdown($date);
+        if ($hasTodayData) {
+            return $today;
+        }
 
-        return response()->json([
-            'success'   => true,
-            'message'   => "Successfully synchronized {$result['total_orders']} orders from TikTok Shop Open API.",
-            'sync'      => $result,
-            'report'    => $breakdown,
-        ]);
+        $latestDate = HourlyMetric::whereHas('shop.platform', fn ($q) => $q->where('code', 'tiktok'))
+            ->max('report_date');
+
+        return $latestDate ? Carbon::parse($latestDate)->format('Y-m-d') : $today;
     }
 }

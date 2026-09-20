@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\HourlyMetric;
 use App\Models\Shop;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class TikTokHourlyMetricSeeder extends Seeder
@@ -13,7 +14,8 @@ class TikTokHourlyMetricSeeder extends Seeder
      */
     public function run(): void
     {
-        $targetDate = '2026-09-19';
+        $today = Carbon::today()->format('Y-m-d');
+        $targetDates = array_unique(['2026-09-19', $today]);
 
         $shops = [
             'kgold_beauty'        => Shop::where('code', 'kgold_beauty')->first(),
@@ -156,26 +158,35 @@ class TikTokHourlyMetricSeeder extends Seeder
             ],
         ];
 
-        foreach ($hourlyData as $hour => $shopData) {
-            foreach ($shopData as $shopCode => $data) {
-                $shop = $shops[$shopCode];
+        foreach ($targetDates as $targetDate) {
+            $isToday = ($targetDate === $today);
+            $maxHour = $isToday ? max((int) Carbon::now()->hour, 11) : 23;
 
-                HourlyMetric::updateOrCreate(
-                    [
-                        'shop_id'     => $shop->id,
-                        'report_date' => $targetDate,
-                        'hour'        => $hour,
-                    ],
-                    [
-                        'orders'      => $data['orders'],
-                        'units_sold'  => (int)round($data['orders'] * 1.25),
-                        'ad_spend'    => $data['spend'],
-                        'gross_sales' => $data['sales'],
-                        'discounts'   => 0.00,
-                        'refunds'     => 0.00,
-                        'net_sales'   => $data['sales'],
-                    ]
-                );
+            foreach ($hourlyData as $hour => $shopData) {
+                if ($isToday && $hour > $maxHour) {
+                    continue;
+                }
+
+                foreach ($shopData as $shopCode => $data) {
+                    $shop = $shops[$shopCode];
+
+                    HourlyMetric::updateOrCreate(
+                        [
+                            'shop_id'     => $shop->id,
+                            'report_date' => $targetDate,
+                            'hour'        => $hour,
+                        ],
+                        [
+                            'orders'      => $data['orders'],
+                            'units_sold'  => (int)round($data['orders'] * 1.25),
+                            'ad_spend'    => $data['spend'],
+                            'gross_sales' => $data['sales'],
+                            'discounts'   => 0.00,
+                            'refunds'     => 0.00,
+                            'net_sales'   => $data['sales'],
+                        ]
+                    );
+                }
             }
         }
     }
